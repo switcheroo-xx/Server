@@ -1,4 +1,4 @@
-const PORT = 1443;
+const PORT = process.argv[2];
 
 var http = require('http');
 var exec = require('child_process').exec;
