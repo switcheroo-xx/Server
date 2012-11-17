@@ -24,6 +24,8 @@ http.createServer(function (req, res) {
       cmd += " " + p.query.device.replace(/[^a-zA-Z 0-9]+/g,'');
     }
 
+    console.log('Executing command: ' + cmd);
+
     child = exec(cmd, function(error, stdout, stderr) {
       res.write('stdout: ' + stdout + '\n');
       res.write('stderr: ' + stderr + '\n');
@@ -31,6 +33,7 @@ http.createServer(function (req, res) {
         res.write('exec error: ' + error);
       }
       res.end();
+      console.log('Request finished.');
     });
   } else {
     res.end('Bad request');
