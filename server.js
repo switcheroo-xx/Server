@@ -1,11 +1,17 @@
 const PORT = process.argv[2];
 
-var http = require('http');
+var https = require('https');
+var fs = require('fs');
 var exec = require('child_process').exec;
 var url = require('url');
 var child;
 
-http.createServer(function (req, res) {
+var options = {
+  key: fs.readFileSync('keys/key.pem'),
+  cert: fs.readFileSync('keys/cert.pem')
+}
+
+https.createServer(options, function (req, res) {
   res.writeHead(200, {'Content-Type': 'text/plain'});
 
   p = url.parse(req.url, true);

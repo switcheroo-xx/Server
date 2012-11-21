@@ -2,3 +2,5 @@
 server_log
 server_err
 
+# HTTPS keys
+keys/

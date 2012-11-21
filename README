@@ -1,3 +1,13 @@
 Server
 ======
 Web server for communicating with tellstick
+
+Before running first time:
+Run "sh configure.sh" and input data to setup keys and certificates for HTTPS.
+
+To run:
+Run "sh run.sh <PORT_NBR>" to start the server on port PORT_NBR
+
+Requirements:
+Requires node.js
+
