@@ -2,5 +2,9 @@
 server_log
 server_err
 
+# Password
+.password
+
 # HTTPS keys
 keys/
+

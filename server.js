@@ -4,14 +4,58 @@ var https = require('https');
 var fs = require('fs');
 var exec = require('child_process').exec;
 var url = require('url');
-var child;
+var crypto = require('crypto');
 
-var options = {
+var pw = require('./pw');
+
+var mSalt;
+var mHash;
+
+function auth(req, callback) {
+  var auth = req.headers.authorization;
+  if (auth) {
+    var tmp = auth.split(' ');
+    if (tmp.length == 2) {
+      var creds = (new Buffer(tmp[1], 'base64')).toString().split(':');
+      if (creds.length == 2) {
+        var password = creds[1];
+        crypto.pbkdf2(
+            password,
+            mSalt,
+            pw.ITERATIONS,
+            pw.KEY_LEN,
+            function(ex, buf) {
+          var hash = new Buffer(buf);
+          if (hash.length == mHash.length) {
+            for (var i = 0; i < hash.length; i++) {
+              if (hash[i] != mHash[i]) {
+                callback(false);
+                return;
+              }
+            }
+            callback(true);
+            return;
+          }
+
+          callback(false);
+        });
+        return;
+      }
+    }
+  }
+  callback(false);
+}
+
+var httpsOptions = {
   key: fs.readFileSync('keys/key.pem'),
   cert: fs.readFileSync('keys/cert.pem')
 }
 
-https.createServer(options, function (req, res) {
+var saltAndHash = fs.readFileSync(pw.FILENAME);
+mSalt = saltAndHash.slice(0, pw.SALT_LEN);
+mHash = saltAndHash.slice(pw.SALT_LEN);
+
+function onAuthorized(req, res) {
   res.writeHead(200, {'Content-Type': 'text/plain'});
 
   p = url.parse(req.url, true);
@@ -32,7 +76,7 @@ https.createServer(options, function (req, res) {
 
     console.log('Executing command: ' + cmd);
 
-    child = exec(cmd, function(error, stdout, stderr) {
+    exec(cmd, function(error, stdout, stderr) {
       res.write('stdout: ' + stdout + '\n');
       res.write('stderr: ' + stderr + '\n');
       if (error !== null) {
@@ -44,5 +88,21 @@ https.createServer(options, function (req, res) {
   } else {
     res.end('Bad request');
   }
-}).listen(PORT);
+}
+
+function onUnauthorized(res) {
+  console.log('Unauthorized access');
+  res.end('Unauthorized access');
+}
+
+https.createServer(httpsOptions, function (req, res) {
+  auth(req, function(isAuth) {
+    if (isAuth) {
+      onAuthorized(req, res);
+    } else {
+      onUnauthorized(res);
+    }
+  });
+}).listen(PORT)
+;
 console.log('Server running at port ' + PORT);
